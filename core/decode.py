@@ -51,9 +51,9 @@ def key_response(raw: int) -> int:
 
 
 def polling_rate(code: int) -> int:
-    if code not in d.POLLING_BY_CODE:
+    if code not in d.POLLING_CODE:
         raise ValueError(f'Polling rate code {code:#04x} is unknown')
-    return d.POLLING_BY_CODE[code]
+    return d.POLLING_CODE[code]
 
 
 def dpi_value(low: int, high: int) -> int:
@@ -82,8 +82,9 @@ def action(slot):
 
 
 def checked(data, report_id):
-    if data[0] != report_id:
-        raise ValueError(f'Expected report {report_id:02x}, got {data[0]:02x}')
+    if not data or data[0] != report_id:
+        got = f'{data[0]:02x}' if data else 'empty'
+        raise ValueError(f'Expected report {report_id:02x}, got {got}')
     if report_id == d.REPORT_POLLING:
         ok = data[3] == data[2] ^ 0xff
     elif report_id in d.CHECKSUM_AT:
@@ -100,7 +101,7 @@ def polling(data) -> int:
     return polling_rate(checked(data, d.REPORT_POLLING)[2])
 
 
-def sensor(data) -> dict:
+def dec_repid04(data) -> dict:
     raw = d.RepID_04.from_buffer_copy(checked(data, d.REPORT_SENSOR), 2)
     return {
         'active': in_range('Active stage', raw.active, 1, d.DPI_STAGES),
@@ -113,7 +114,7 @@ def sensor(data) -> dict:
     }
 
 
-def light(data) -> dict:
+def dec_repid05(data) -> dict:
     raw = d.RepID_05.from_buffer_copy(checked(data, d.REPORT_LIGHT), 2)
     return {
         'mode': light_mode(raw.mode),
