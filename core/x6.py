@@ -53,7 +53,6 @@ class Mouse:
     def ready(self):
         size = d.REPORT_SIZE[d.REPORT_READ]
         for poll in range(d.READ_POLLS):
-            time.sleep(d.READ_DELAY)
             if self.iface.get_feature(d.REPORT_READ, size)[1] == d.READY:
                 return True
         return False
