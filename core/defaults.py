@@ -125,7 +125,7 @@ ACK_RETRIES = 10
 
 # ----------------------------------------------------------------- values ---
 POLLING_RATES = {1000: 0x01, 500: 0x02, 250: 0x04, 125: 0x08}
-POLLING_BY_CODE = {v: k for k, v in POLLING_RATES.items()}
+POLLING_CODE = {v: k for k, v in POLLING_RATES.items()}
 POLLING_NAMES = {
     1000: 'esports',
     500: 'gaming',
