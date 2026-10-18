@@ -1,6 +1,7 @@
 from . import defaults as d
 from .hid import connect
 from .x6 import Mouse
+import time
 
 
 def status(mouse):
@@ -49,11 +50,12 @@ def main():
             values = status(mouse)
         except TimeoutError as error:
             raise SystemExit(f'Could not read settings: {error}')
-    show(info, values)
+    # show(info, values)
+    # return info, values
+    print(info, values)
+    print("Sleeping for 5 seconds to secure traffic")
+    time.sleep(2)
 
 
 if __name__ == '__main__':
-    import time
     main()
-    print("Sleeping for 5 seconds to secure traffic")
-    time.sleep(5)
