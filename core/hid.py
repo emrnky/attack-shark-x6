@@ -165,31 +165,3 @@ class Events:
         start, size = head.properties_off, head.properties_len
         pairs = msg[start:start + size].split(b'\0')
         return dict(p.decode().split('=', 1) for p in pairs if b'=' in p)
-
-
-if __name__ == '__main__':
-    for pid in (0xfa60, 0xfa61):
-        for d in find_interfaces(0x1d57, pid):
-            print(show(d))
-
-    # print(node("dongle", d.LINKS))  # cable, bluetooth
-    """
-      {'path': '/dev/hidraw9', 
-       'bus': 3, 
-       'vid': 7511, 
-       'pid': 64096, 
-       'product': 
-       'Beken 2.4G Wireless Device', 
-       'interface': 2, 
-       'link': 'dongle'}
-    """
-    # print(connect(d.LINKS))
-    """
-      {'path': '/dev/hidraw9', 
-       'bus': 3, 
-       'vid': 7511, 
-       'pid': 64096, 
-       'product': 'Beken 2.4G Wireless Device', 
-       'interface': 2, 
-       'link': 'dongle'}
-    """
