@@ -1,7 +1,7 @@
 from . import defaults as d
 
 
-def level(val: d.Level) -> d.Percent:
+def battery_level(val: d.Level) -> d.Percent:
     low, high = d.BATTERY_LEVELS
     if val not in range(low, high + 1):
         raise ValueError(f'Battery level {val} is not in {low}-{high}')
@@ -15,7 +15,7 @@ def light_mode(mode: d.LMode) -> d.LModeName:
     return d.LIGHT_MODES[mode]
 
 
-def dpi(low: int, high: int) -> int:
+def dpi_value(low: int, high: int) -> int:
     val = ((high << 8 | low) + 1) * d.DPI_STEP
     if val not in range(d.DPI_MIN, d.DPI_MAX + 1, d.DPI_STEP):
         raise ValueError(f'DPI {val} is not in {d.DPI_MIN}-{d.DPI_MAX} '
@@ -33,7 +33,7 @@ def action(slot):
 
 if __name__ == "__main__":
 
-    # print(level(2))
+    # print(battery_level(2))
     """
        vals are 1-10 
             -> 5 will return 50% 
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         vals are as long as the color mode list 
         else will return None
     """
-    # print(dpi(0x07, 0x02))  # highest
-    # print(dpi(0x02, 0x07))  # higher than highest error
-    # print(dpi(0x0f, 0x00))
-    # print(dpi(-1, 1)) error negative
+    # print(dpi_value(0x07, 0x02))  # highest
+    # print(dpi_value(0x02, 0x07))  # higher than highest error
+    # print(dpi_value(0x0f, 0x00))
+    # print(dpi_value(-1, 1)) error negative
