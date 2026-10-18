@@ -9,9 +9,9 @@ The udev rule lets you run this without root. Without it, run it with sudo.
 
 
 ```
-   sudo cp 99-attacksharkx6.rules /etc/udev/rules.d/
-   sudo udevadm control --reload
-   sudo udevadm trigger --subsystem-match=hidraw
+sudo cp 99-attacksharkx6.rules /etc/udev/rules.d/
+sudo udevadm control --reload
+sudo udevadm trigger --subsystem-match=hidraw
 ```
 
 ## Disclaimer
