@@ -11,11 +11,12 @@ Settings (feature reports), as read back from the mouse::
 Read a report with ``a0 <id> <size> 00 00 00 00 00``, poll ``a0`` until byte 1
 is 0x01, then fetch ``<id>``.
 """
+import ctypes as C
+from typing import Literal
+
+from .hid import BUS_BLUETOOTH, BUS_USB
 
 # ---------------------------------------------------------------- identity ---
-BUS_USB = 3
-BUS_BLUETOOTH = 5
-
 VENDOR_USB = 0x1d57
 VENDOR_BLUETOOTH = 0x045e
 PRODUCT_CABLE = 0xfa61
@@ -67,6 +68,9 @@ CHARGE_NAME = {v: k for k, v in CHARGE.items()}
 
 BATTERY_LEVELS = (1, 10)
 BATTERY_STEP = 10
+
+type Level = Literal[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+type Percent = Literal[10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 
 # ------------------------------------------------------------- report ids ----
 REPORT_EVENT = 0x03
@@ -142,18 +146,18 @@ LIGHT_MODES = [
     'color-breathing',
     'static-dpi',
     'breathing-dpi',
-    # 'rainbow-wave',
-    # 'lightning',
-    # 'static-mixed',
-    # 'marquee',
-    # 'marquee-2',
 ]
 LIGHT_MODE = {name: code for code, name in enumerate(LIGHT_MODES)}
+
+type LMode = Literal[0, 1, 2, 3, 4, 5, 6]
+type LModeName = Literal['off', 'static', 'breathing', 'neon',
+                         'color-breathing', 'static-dpi', 'breathing-dpi']
 
 BRIGHTNESS_MODES = (LIGHT_MODE['static'], 9)
 LIGHT_SPEED = (4, 8)
 LIGHT_BRIGHTNESS = (1, 8)
 SLEEP_TIME = (1, 60)
+SLEEP_STEP = 0.5
 DEEP_SLEEP_TIME = (1, 60)
 KEY_RESPONSE = (4, 50)
 KEY_RESPONSE_STEP = 2
@@ -217,3 +221,47 @@ ACTIONS = {
     'light-mode': 0x3c,
 }
 ACTION_NAME = {v: k for k, v in ACTIONS.items()}
+
+# ---------------------------------------------------------------- layouts ---
+
+
+class RepID_04(C.BigEndianStructure):
+    _fields_ = [
+        ('angle_snap', C.c_uint8),
+        ('ripple', C.c_uint8),
+        ('enabled', C.c_uint8),
+        ('angle_snap_copy', C.c_uint8),
+        ('motion_sync', C.c_uint8),
+        ('dpi_low', C.c_uint8 * DPI_STAGES),
+        ('dpi_high', C.c_uint8 * DPI_STAGES),
+        ('active', C.c_uint8),
+        ('colors', C.c_uint8 * 3 * DPI_STAGES),
+    ]
+
+
+class RepID_05(C.BigEndianStructure):
+    _fields_ = [
+        ('mode', C.c_uint8, 4),
+        ('spare', C.c_uint8, 4),
+        ('deep_sleep_high', C.c_uint8, 4),
+        ('speed', C.c_uint8, 4),
+        ('deep_sleep_low', C.c_uint8, 4),
+        ('brightness', C.c_uint8, 4),
+        ('color', C.c_uint8 * 3),
+        ('sleep', C.c_uint8),
+        ('key_response', C.c_uint8),
+    ]
+
+
+class Slot(C.BigEndianStructure):
+    _fields_ = [
+        ('action', C.c_uint8),
+        ('modifiers', C.c_uint8),
+        ('key', C.c_uint8),
+    ]
+
+
+class Buttons(C.BigEndianStructure):
+    _fields_ = [
+        ('slots', Slot * BUTTON_SLOTS),
+    ]
