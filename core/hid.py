@@ -171,3 +171,25 @@ if __name__ == '__main__':
     for pid in (0xfa60, 0xfa61):
         for d in find_interfaces(0x1d57, pid):
             print(show(d))
+
+    # print(node("dongle", d.LINKS))  # cable, bluetooth
+    """
+      {'path': '/dev/hidraw9', 
+       'bus': 3, 
+       'vid': 7511, 
+       'pid': 64096, 
+       'product': 
+       'Beken 2.4G Wireless Device', 
+       'interface': 2, 
+       'link': 'dongle'}
+    """
+    # print(connect(d.LINKS))
+    """
+      {'path': '/dev/hidraw9', 
+       'bus': 3, 
+       'vid': 7511, 
+       'pid': 64096, 
+       'product': 'Beken 2.4G Wireless Device', 
+       'interface': 2, 
+       'link': 'dongle'}
+    """
