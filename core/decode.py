@@ -85,6 +85,10 @@ def checked(data, report_id):
     if not data or data[0] != report_id:
         got = f'{data[0]:02x}' if data else 'empty'
         raise ValueError(f'Expected report {report_id:02x}, got {got}')
+    size = d.REPORT_SIZE[report_id]
+    if len(data) != size:
+        raise ValueError(f'Report {report_id:02x} is {len(data)} bytes, '
+                         f'expected {size}')
     if report_id == d.REPORT_POLLING:
         ok = data[3] == data[2] ^ 0xff
     elif report_id in d.CHECKSUM_AT:
