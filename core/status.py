@@ -53,4 +53,7 @@ def main():
 
 
 if __name__ == '__main__':
+    import time
     main()
+    print("Sleeping for 5 seconds to secure traffic")
+    time.sleep(5)
