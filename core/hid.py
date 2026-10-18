@@ -29,6 +29,9 @@ def ioc(direction, number, size):
 
 READ, WRITE = 2, 1
 
+BUS_USB = 3
+BUS_BLUETOOTH = 5
+
 GET_INFO = ioc(READ, 0x03, C.sizeof(DevInfo))
 GET_NAME = ioc(READ, 0x04, 256)
 GET_PHYS = ioc(READ, 0x05, 256)
@@ -42,6 +45,17 @@ UDEV_GROUP = 2
 def nodes():
     names = [n for n in os.listdir('/dev') if n.startswith('hidraw')]
     return sorted(os.path.join('/dev', n) for n in names)
+
+
+def node(link, links):
+    bus, vid, pid, iface = links[link]
+    found = [n for n in find_interfaces(vid, pid, iface) if n['bus'] == bus]
+    return dict(found[0], link=link) if found else None
+
+
+def connect(links):
+    nodes = (node(link, links) for link in links)
+    return next((n for n in nodes if n), None)
 
 
 def paths():
