@@ -10,7 +10,6 @@ class Mouse:
         self.info = info
         self.link = info['link']
         self.iface = HidInterface(info)
-        self.timeout = d.FRAME_TIMEOUT
 
     def __enter__(self):
         self.iface.open()
@@ -35,43 +34,22 @@ class Mouse:
             return 'battery', (value, 'charging')
         return name, value
 
-    def battery(self, timeout=d.FRAME_TIMEOUT):
-        end = time.monotonic() + timeout
-        while (left := end - time.monotonic()) > 0:
-            frame = self.frame(left)
-            if frame is None:
-                break
-            if not frame:
-                raise ConnectionError('mouse was disconnected')
-            if len(frame) < 5 or frame[0] != d.REPORT_EVENT:
-                continue
-            if frame[2] != d.EVENT_BATTERY:
-                continue
-            return self.event(frame)[1]
-        raise TimeoutError(f'no battery frame in {timeout} s: asleep or off')
-
     def ready(self):
         size = d.REPORT_SIZE[d.REPORT_READ]
-        # start = time.monotonic()
         for poll in range(d.READ_POLLS):
-            reply = self.iface.get_feature(d.REPORT_READ, size)
-            # ms = (time.monotonic() - start) * 1000
-            # print(f'  poll {poll} {ms:6.1f} ms: {reply.hex(" ")}')
-            if reply[1] == d.READY:
+            if self.iface.get_feature(d.REPORT_READ, size)[1] == d.READY:
                 return True
+            time.sleep(d.READ_DELAY)
         return False
 
     def report(self, report_id):
         size = d.REPORT_SIZE[report_id]
         request = bytes([d.REPORT_READ, report_id, size, 0, 0, 0, 0, 0])
         for attempt in range(d.READ_RETRIES):
-            # print(f'request {attempt} {request.hex(" ")}')
             self.iface.set_feature(request)
             if self.ready():
-                data = self.iface.get_feature(report_id, size)
-                # print(f'report {report_id:02x}: {data.hex(" ")}')
-                return data
-        raise TimeoutError(f'report {report_id:02x} not ready')
+                return self.iface.get_feature(report_id, size)
+        raise TimeoutError(f'report {report_id:02x} not ready: asleep or off')
 
     def polling_rate(self):
         return decode.dec_repid06(self.report(d.REPORT_POLLING))

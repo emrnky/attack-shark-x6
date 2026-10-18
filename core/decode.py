@@ -19,7 +19,7 @@ def charge(state: int) -> str:
     return d.CHARGE_NAME[state]
 
 
-def light_mode(mode: d.LMode) -> d.LModeName:
+def light_mode(mode: d.LMode) -> str:
     return d.LIGHT_MODES[in_range('Light mode', mode, 0,
                                   len(d.LIGHT_MODES) - 1)]
 

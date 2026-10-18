@@ -37,7 +37,6 @@ LINKS = {
 
 # ------------------------------------------------------------------ events ---
 EVENT_DPI = 0x10
-# EVENT_POLLING = 0x20
 EVENT_BATTERY = 0x40
 EVENT_ACK = 0x50
 EVENT_LEVEL = 0x60
@@ -46,7 +45,6 @@ EVENT_PROFILE = 0x80
 
 EVENTS = {
     'dpi': EVENT_DPI,
-    # 'polling': EVENT_POLLING,
     'battery': EVENT_BATTERY,
     'ack': EVENT_ACK,
     'level': EVENT_LEVEL,
@@ -117,21 +115,16 @@ COMMIT = bytes([REPORT_COMMIT, 0x0a, PROFILE, 0xfe, 0x01, 0xfe])
 FRAME_TIMEOUT = 6
 AWAKE_GAP = 3
 
-READ_RETRIES = 4
-READ_POLLS = 10
-READ_DELAY = 0.1
+READ_RETRIES = 1
+READ_POLLS = 100
+READ_DELAY = 0.01
+MOVE_TRIES = 5
 ACK_TIMEOUT = 0.5
 ACK_RETRIES = 10
 
 # ----------------------------------------------------------------- values ---
 POLLING_RATES = {1000: 0x01, 500: 0x02, 250: 0x04, 125: 0x08}
 POLLING_CODE = {v: k for k, v in POLLING_RATES.items()}
-POLLING_NAMES = {
-    1000: 'esports',
-    500: 'gaming',
-    250: 'office',
-    125: 'power-saving',
-}
 
 DPI_MIN = 50
 DPI_MAX = 26000
@@ -150,8 +143,6 @@ LIGHT_MODES = [
 LIGHT_MODE = {name: code for code, name in enumerate(LIGHT_MODES)}
 
 type LMode = Literal[0, 1, 2, 3, 4, 5, 6]
-type LModeName = Literal['off', 'static', 'breathing', 'neon',
-                         'color-breathing', 'static-dpi', 'breathing-dpi']
 
 BRIGHTNESS_MODES = (LIGHT_MODE['static'], 9)
 LIGHT_SPEED = (4, 8)
@@ -164,16 +155,6 @@ KEY_RESPONSE_STEP = 2
 
 # ---------------------------------------------------------------- buttons ---
 BUTTON_SLOTS = 18
-
-# BUTTONS = {
-#     1: 'left',
-#     2: 'right',
-#     3: 'wheel',
-#     4: 'dpi',
-#     7: 'side-front',
-#     8: 'side-rear',
-#     9: 'mode',
-# }
 
 ACTION_KEY = 0x11
 ACTION_MACRO = 0x12
