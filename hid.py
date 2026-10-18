@@ -2,6 +2,7 @@ import ctypes as C
 import fcntl
 import os
 import select
+import socket
 
 
 class DevInfo(C.Structure):
@@ -12,14 +13,30 @@ class DevInfo(C.Structure):
     ]
 
 
+class UdevHeader(C.Structure):
+    _fields_ = [
+        ('prefix', C.c_char * 8),
+        ('magic', C.c_uint32),
+        ('header_size', C.c_uint32),
+        ('properties_off', C.c_uint32),
+        ('properties_len', C.c_uint32),
+    ]
+
+
 def ioc(direction, number, size):
     return direction << 30 | size << 16 | ord('H') << 8 | number
 
 
 READ, WRITE = 2, 1
+
 GET_INFO = ioc(READ, 0x03, C.sizeof(DevInfo))
 GET_NAME = ioc(READ, 0x04, 256)
 GET_PHYS = ioc(READ, 0x05, 256)
+SET_FEATURE = 0x06
+GET_FEATURE = 0x07
+
+NETLINK_KOBJECT_UEVENT = 15
+UDEV_GROUP = 2
 
 
 def nodes():
@@ -36,23 +53,24 @@ def text(f, question):
     return raw.split(b'\0', 1)[0].decode()
 
 
-def info(f):
+def devinfo(f):
     raw = fcntl.ioctl(f, GET_INFO, bytes(C.sizeof(DevInfo)))
     return DevInfo.from_buffer_copy(raw)
 
 
 def interface(f):
-    phys = text(f, GET_PHYS)
-    return int(phys.rsplit('input', 1)[-1])
+    tail = text(f, GET_PHYS).rsplit('input', 1)[-1]
+    return int(tail) if tail.isdigit() else None
 
 
 def describe(path):
     with open(path, 'rb', buffering=0) as f:
-        i = info(f)
+        info = devinfo(f)
         return {
             'path': path,
-            'vid': i.vendor,
-            'pid': i.product,
+            'bus': info.bustype,
+            'vid': info.vendor,
+            'pid': info.product,
             'product': text(f, GET_NAME),
             'interface': interface(f),
         }
@@ -79,6 +97,12 @@ class HidInterface:
         self.path = info['path']
         self.fd = None
 
+    def __enter__(self):
+        return self.open()
+
+    def __exit__(self, *args):
+        self.close()
+
     def open(self):
         self.fd = os.open(self.path, os.O_RDWR)
         return self
@@ -86,28 +110,50 @@ class HidInterface:
     def close(self):
         os.close(self.fd)
 
-    def __enter__(self):
-        return self.open()
-
-    def __exit__(self, *args):
-        self.close()
+    def fileno(self):
+        return self.fd
 
     def set_feature(self, data):
         buf = bytearray(data)
-        fcntl.ioctl(self.fd, ioc(READ | WRITE, 0x06, len(buf)), buf)
+        question = ioc(READ | WRITE, SET_FEATURE, len(buf))
+        fcntl.ioctl(self.fd, question, buf)
 
-    def get_feature(self, report_id, length):
-        buf = bytearray(length)
+    def get_feature(self, report_id, size):
+        buf = bytearray(size)
         buf[0] = report_id
-        fcntl.ioctl(self.fd, ioc(READ | WRITE, 0x07, length), buf)
+        question = ioc(READ | WRITE, GET_FEATURE, size)
+        fcntl.ioctl(self.fd, question, buf)
         return bytes(buf)
 
     def read_input(self, timeout=3.0):
-        if select.select([self.fd], [], [], timeout)[0]:
+        if not select.select([self], [], [], timeout)[0]:
+            return None
+        try:
             return os.read(self.fd, 64)
-        return None
+        except OSError:
+            return b''
+
+
+class Events:
+    def __init__(self):
+        family, kind = socket.AF_NETLINK, socket.SOCK_DGRAM
+        self.sock = socket.socket(family, kind, NETLINK_KOBJECT_UEVENT)
+        self.sock.bind((0, UDEV_GROUP))
+
+    def fileno(self):
+        return self.sock.fileno()
+
+    def read(self):
+        msg = self.sock.recv(8192)
+        if not msg.startswith(b'libudev'):
+            return {}
+        head = UdevHeader.from_buffer_copy(msg)
+        start, size = head.properties_off, head.properties_len
+        pairs = msg[start:start + size].split(b'\0')
+        return dict(p.decode().split('=', 1) for p in pairs if b'=' in p)
 
 
 if __name__ == '__main__':
-    for d in find_interfaces(0x1d57, 0xfa60, 1):
-        print(show(d))
+    for pid in (0xfa60, 0xfa61):
+        for d in find_interfaces(0x1d57, pid):
+            print(show(d))
