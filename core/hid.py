@@ -136,8 +136,8 @@ class HidInterface:
         buf = bytearray(size)
         buf[0] = report_id
         question = ioc(READ | WRITE, GET_FEATURE, size)
-        fcntl.ioctl(self.fd, question, buf)
-        return bytes(buf)
+        count = fcntl.ioctl(self.fd, question, buf)
+        return bytes(buf[:count])
 
     def read_input(self, timeout=3.0):
         if not select.select([self], [], [], timeout)[0]:
