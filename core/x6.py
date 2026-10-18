@@ -27,8 +27,12 @@ class Mouse:
 
     def event(self, frame):
         name, value = decode.event(frame)
-        if name == 'battery' and self.link == 'cable':
+        if self.link != 'cable':
+            return name, value
+        if name == 'battery':
             return name, (value[0], 'charging')
+        if name == 'level':
+            return 'battery', (value, 'charging')
         return name, value
 
     def battery(self, timeout=d.FRAME_TIMEOUT):
@@ -39,11 +43,11 @@ class Mouse:
                 break
             if not frame:
                 raise ConnectionError('mouse was disconnected')
-            if frame[0] != d.REPORT_EVENT:
+            if len(frame) < 5 or frame[0] != d.REPORT_EVENT:
                 continue
-            name, value = self.event(frame)
-            if name == 'battery' and value[1]:
-                return value
+            if frame[2] != d.EVENT_BATTERY:
+                continue
+            return self.event(frame)[1]
         raise TimeoutError(f'no battery frame in {timeout} s: asleep or off')
 
     def ready(self):
@@ -64,7 +68,7 @@ class Mouse:
         raise TimeoutError(f'report {report_id:02x} not ready: asleep or off')
 
     def polling_rate(self):
-        return decode.polling(self.report(d.REPORT_POLLING))
+        return decode.dec_repid06(self.report(d.REPORT_POLLING))
 
     def sensor(self):
         return decode.dec_repid04(self.report(d.REPORT_SENSOR))
@@ -73,7 +77,7 @@ class Mouse:
         return decode.dec_repid05(self.report(d.REPORT_LIGHT))
 
     def buttons(self):
-        return decode.buttons(self.report(d.REPORT_BUTTONS))
+        return decode.dec_repid08(self.report(d.REPORT_BUTTONS))
 
     def settings(self):
         return {

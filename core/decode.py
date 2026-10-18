@@ -78,7 +78,9 @@ def action(slot):
         return f'key {slot.modifiers:02x}:{slot.key:02x}'
     if slot.action == d.ACTION_MACRO:
         return f'macro {slot.key}'
-    return d.ACTION_NAME.get(slot.action, f'unknown {slot.action:02x}')
+    if slot.action not in d.ACTION_NAME:
+        raise ValueError(f'Button action {slot.action:02x} is unknown')
+    return d.ACTION_NAME[slot.action]
 
 
 def checked(data, report_id):
@@ -101,11 +103,9 @@ def checked(data, report_id):
     return data
 
 
-def polling(data) -> int:
-    return polling_rate(checked(data, d.REPORT_POLLING)[2])
-
-
 def dec_repid04(data) -> dict:
+    """Report 04: DPI stages (active, enabled, values, colors) and the
+    sensor options ripple, angle snap and motion sync."""
     raw = d.RepID_04.from_buffer_copy(checked(data, d.REPORT_SENSOR), 2)
     return {
         'active': in_range('Active stage', raw.active, 1, d.DPI_STAGES),
@@ -119,6 +119,8 @@ def dec_repid04(data) -> dict:
 
 
 def dec_repid05(data) -> dict:
+    """Report 05: light mode, speed, brightness and color, plus the sleep
+    and deep sleep timers and the key response time."""
     raw = d.RepID_05.from_buffer_copy(checked(data, d.REPORT_LIGHT), 2)
     return {
         'mode': light_mode(raw.mode),
@@ -132,7 +134,13 @@ def dec_repid05(data) -> dict:
     }
 
 
-def buttons(data) -> list:
+def dec_repid06(data) -> int:
+    """Report 06: polling rate in Hz."""
+    return polling_rate(checked(data, d.REPORT_POLLING)[2])
+
+
+def dec_repid08(data) -> list:
+    """Report 08: the action bound to each of the 18 button slots."""
     raw = d.Buttons.from_buffer_copy(checked(data, d.REPORT_BUTTONS), 2)
     return [action(slot) for slot in raw.slots]
 
@@ -146,11 +154,11 @@ def event(frame):
     if code == d.EVENT_BATTERY:
         return 'battery', (battery_level(second), charge(first))
     if code == d.EVENT_LEVEL:
-        return 'battery', (battery_level(first), None)
+        return 'level', battery_level(first)
     if code == d.EVENT_DPI:
         return 'dpi', in_range('DPI stage', first, 1, d.DPI_STAGES)
     if code == d.EVENT_LIGHT:
         return 'light', light_mode(first >> 4)
     if code == d.EVENT_ACK:
         return 'ack', (second, first == 0)
-    return d.EVENT_NAME.get(code, f'unknown {code:02x}'), (first, second)
+    raise ValueError(f'Event {code:02x} is unknown')
