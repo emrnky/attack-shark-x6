@@ -22,10 +22,13 @@ for font in ("DejaVuSansMono.ttf", "DejaVuSansMono-Bold.ttf"):
 
 Gtk.init()
 
-desktop = Gio.Settings.new("org.gnome.desktop.interface")
 theme = Gtk.Settings.get_default()
-theme.props.gtk_theme_name = desktop.get_string("gtk-theme")
-theme.props.gtk_application_prefer_dark_theme = desktop.get_string("color-scheme") == "prefer-dark"
+schema = Gio.SettingsSchemaSource.get_default().lookup("org.gnome.desktop.interface", True)
+if schema:
+    desktop = Gio.Settings.new("org.gnome.desktop.interface")
+    theme.props.gtk_theme_name = desktop.get_string("gtk-theme")
+    if schema.has_key("color-scheme"):
+        theme.props.gtk_application_prefer_dark_theme = desktop.get_string("color-scheme") == "prefer-dark"
 
 css = Gtk.CssProvider()
 css.load_from_string("""
