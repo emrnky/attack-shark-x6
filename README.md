@@ -5,6 +5,8 @@ Python.
 
 ## Installation
 
+`gtk4-layer-shell` must be installed.
+
 The udev rule lets you run this without root. Without it, run it with sudo.
 
 
